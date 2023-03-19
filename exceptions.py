@@ -1,0 +1,4 @@
+
+
+class URLNotShortenedException(Exception):
+    pass
