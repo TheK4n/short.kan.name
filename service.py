@@ -16,17 +16,19 @@ class Cacher:
     def __connect_database(self):
         self.__db = DB()
 
-    def cache_url_and_get_id(self, url: str, one_time: bool) -> str:
-        shorted_url_id = self.__generate_unique()
-        if one_time:
-            self.__db.set_one_time(shorted_url_id, url, self.__ttl)
-        self.__db.set(shorted_url_id, url, self.__ttl)
-        return shorted_url_id
+    def cache_url(self, url: str, alias: str):
+        self.__db.set(alias, url, self.__ttl)
 
-    def __generate_unique(self) -> str:
+    def cache_one_time_url(self, url: str, alias: str):
+        self.__db.set_one_time(alias, url, self.__ttl)
+
+    def is_cached(self, alias: str) -> bool:
+        return self.__db.exists(alias)
+
+    def generate_free_alias(self) -> str:
         while True:
             random_url_id = self.__generate_random()
-            if not self.__db.exists(random_url_id):
+            if not self.is_cached(random_url_id):
                 return random_url_id
 
     def __generate_random(self):
@@ -41,9 +43,9 @@ class Expander:
     def __connect_database(self):
         self.__db = DB()
 
-    def expand(self, id: str) -> str:
+    def expand(self, alias: str) -> str:
         try:
-            result = self.__db.get(id)
+            result = self.__db.get(alias)
         except KeyNotExistsError:
             raise URLNotShortenedException
         return result

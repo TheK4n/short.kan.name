@@ -30,32 +30,48 @@ async def short_url(
         ),
         one_time: bool = Query(
             default=False,
-            alias="one-time",
+            # alias="one-time",
             description="If true, after following a url, url becomes invalid"
+        ),
+        alias: str | None = Query(
+            default=None,
+            min_length=7, max_length=URL_LENGTH*2,
+            regex=r'[a-zA-Z0-9]{7,}',
+            example="wfZy2mH",
+            description="Desired alias, if already used or invalid - generates new"
         )
 ):
     cacher = Cacher(ttl, URL_LENGTH)
 
-    shorted_url_id = cacher.cache_url_and_get_id(url_to_be_shortened, one_time)
+    is_alias_not_provided_or_is_taken = (alias is None) or cacher.is_cached(alias)
 
-    redirect_url = f"{request.headers['Host']}/{shorted_url_id}"
+    if is_alias_not_provided_or_is_taken:
+        alias = cacher.generate_free_alias()
+
+    if one_time:
+        cacher.cache_one_time_url(url_to_be_shortened, alias)
+    else:
+        cacher.cache_url(url_to_be_shortened, alias)
+
+    redirect_url = f"{request.headers['Host']}/{alias}"
 
     return PlainTextResponse(redirect_url)
 
 
-@app.get("/{shorted_url_id}")
+@app.get("/{alias}")
 async def redirect_by_shorted_url(
-    shorted_url_id: str = Path(
+    alias: str = Path(
         regex=r'[a-zA-Z0-9]{7,}',
+        min_length=7, max_length=URL_LENGTH*2,
         example="wfZy2mH"
     )
 ):
     expander = Expander()
     try:
-        expanded_url: str = expander.expand(shorted_url_id)
+        expanded_url: str = expander.expand(alias)
     except URLNotShortenedException:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    return RedirectResponse(expanded_url, status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(expanded_url, status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 
 if __name__ == '__main__':
