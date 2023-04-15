@@ -1,5 +1,6 @@
-import requests
 import time
+import requests
+from api_wrapper import APIWrapper
 
 
 PROTOCOL = "http://"
@@ -10,39 +11,30 @@ HOST = f"{PROTOCOL}{API_HOST}"
 TEST_URL = "https://github.com/thek4n/dotfiles"
 
 
-def post(data: str, **keys) -> requests.Response:
-    headers = {"Content-type": "text/plain"}
-
-    uri = f"{HOST}?"
-    for k, v in keys.items():
-        uri += f"{k}={v}&"
-
-    resp = requests.post(uri, data=data, headers=headers)
-    return resp
+def short_url(url: str, **params) -> requests.Response:
+    api = APIWrapper(HOST)
+    return api.short_url(body=url, **params)
 
 
-def short_url(url: str) -> str:
-    resp = post(url)
-    return resp.text
-
-
-def expand_url(url: str) -> requests.Response:
-    return requests.get(f"{PROTOCOL}{url}", allow_redirects=False)
+def expand_url(alias: str) -> requests.Response:
+    api = APIWrapper(HOST)
+    return api.expand_url(alias)
 
 
 def test_shorting():
-    shorted_url = short_url(TEST_URL)
-    assert shorted_url.startswith(API_HOST)
+    shorted_url_response = short_url(TEST_URL)
+    assert shorted_url_response.text.startswith(API_HOST)
 
 
 def test_expanding():
-    shorted_url = short_url(TEST_URL)
-    expand_url_response = expand_url(shorted_url)
+    shorted_url_response = short_url(TEST_URL)
+    shorted_url_alias = shorted_url_response.text.split("/")[-1]
+    expand_url_response = expand_url(shorted_url_alias)
     assert expand_url_response.headers["Location"] == TEST_URL
 
 
 def test_onetime_url():
-    short_url_response = post(TEST_URL, one_time=True)
+    short_url_response = short_url(TEST_URL, one_time=True)
     expand_url_response = requests.get(f"http://{short_url_response.text}", allow_redirects=False)
     assert expand_url_response.status_code == 301
     expand_url_response_repeated = requests.get(f"http://{short_url_response.text}", allow_redirects=False)
@@ -50,22 +42,24 @@ def test_onetime_url():
 
 
 def test_url_lifetime():
-    ttl = 5
-    short_url_response = post(TEST_URL, ttl=ttl)
-    expand_url_response = requests.get(f"http://{short_url_response.text}", allow_redirects=False)
+    ttl = 3
+    short_url_response = short_url(TEST_URL, ttl=ttl)
+    expand_url_response = expand_url(short_url_response.text.split("/")[-1])
     assert expand_url_response.status_code == 301
-    expand_url_response_repeat_0 = requests.get(f"http://{short_url_response.text}", allow_redirects=False)
+    expand_url_response_repeat_0 = expand_url(short_url_response.text.split("/")[-1])
     assert expand_url_response_repeat_0.status_code == 301
     time.sleep(ttl+1)  # wait for url has expired
-    expand_url_response_repeat_1 = requests.get(f"http://{short_url_response.text}", allow_redirects=False)
+    expand_url_response_repeat_1 = expand_url(short_url_response.text.split("/")[-1])
     assert expand_url_response_repeat_1.status_code == 404
 
 
-def test_valid_custom_alias():
+def test_if_desired_alias_taken_generates_random_url():
     alias = "testalias"
-    shorten_url = post(TEST_URL, alias=alias, one_time=True).text
-    assert shorten_url == f"{API_HOST}/{alias}"
+    short_url(TEST_URL, alias=alias, one_time=True)
+    shorted_url_response = short_url(TEST_URL, alias=alias, one_time=True)
+    shorted_url_alias = shorted_url_response.text.split("/")[-1]
+    assert shorted_url_alias != alias
 
-    expand_url_response = expand_url(shorten_url)
+    expand_url_response = expand_url(shorted_url_alias)
     assert expand_url_response.headers["Location"] == TEST_URL
 

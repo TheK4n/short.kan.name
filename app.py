@@ -30,7 +30,6 @@ async def short_url(
         ),
         one_time: bool = Query(
             default=False,
-            # alias="one-time",
             description="If true, after following a url, url becomes invalid"
         ),
         alias: str | None = Query(
@@ -38,7 +37,7 @@ async def short_url(
             min_length=7, max_length=URL_LENGTH*2,
             regex=r'[a-zA-Z0-9]{7,}',
             example="wfZy2mH",
-            description="Desired alias, if already used or invalid - generates new"
+            description="Desired alias, if already taken or invalid - generates new"
         )
 ):
     cacher = Cacher(ttl, URL_LENGTH)
