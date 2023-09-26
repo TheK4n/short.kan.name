@@ -4,7 +4,7 @@ from api_wrapper import APIWrapper
 
 
 PROTOCOL = "http://"
-API_HOST = "127.0.0.1:8000"
+API_HOST = "127.0.0.1:8080"
 HOST = f"{PROTOCOL}{API_HOST}"
 
 

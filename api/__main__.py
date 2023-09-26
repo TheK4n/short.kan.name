@@ -1,3 +1,5 @@
+import logging
+import config
 from service import Cacher, Expander
 from exceptions import URLNotShortenedException
 
@@ -9,11 +11,8 @@ from fastapi import (
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
 
-URL_TTL_SECONDS = 60 * 60 * 24
-URL_LENGTH = 7
-
-
 app = FastAPI()
+logger = logging.getLogger("api_logger")
 
 
 @app.post("/")
@@ -24,8 +23,8 @@ async def short_url(
             max_length=2000
         ),
         ttl: int = Query(
-            default=URL_TTL_SECONDS,
-            gt=0, lt=URL_TTL_SECONDS*3,
+            default=config.MIN_URL_TTL_SECONDS,
+            gt=0, lt=config.MAX_URL_TTL_SECONDS,
             description="Time to live"
         ),
         one_time: bool = Query(
@@ -34,25 +33,29 @@ async def short_url(
         ),
         alias: str | None = Query(
             default=None,
-            min_length=7, max_length=URL_LENGTH*2,
+            min_length=config.MIN_URL_ALIAS_LEN, max_length=config.MAX_URL_ALIAS_LEN,
             regex=r'[a-zA-Z0-9]{7,}',
             example="wfZy2mH",
             description="Desired alias, if already taken or invalid - generates new"
         )
 ):
-    cacher = Cacher(ttl, URL_LENGTH)
+    cacher = Cacher(ttl, config.MIN_URL_ALIAS_LEN)
 
     is_alias_not_provided_or_is_taken = (alias is None) or cacher.is_cached(alias)
 
     if is_alias_not_provided_or_is_taken:
         alias = cacher.generate_free_alias()
+        logger.debug(f"Generated new free alias '{alias}' for url {url_to_be_shortened}")
 
     if one_time:
         cacher.cache_one_time_url(url_to_be_shortened, alias)
     else:
         cacher.cache_url(url_to_be_shortened, alias)
 
+    logger.debug(f"Cached url {url_to_be_shortened} with alias '{alias}'")
+
     redirect_url = f"{request.headers['Host']}/{alias}"
+    logger.info(f"Shortened url {url_to_be_shortened} with alias '{alias}' from '{request.client.host}'")
 
     return PlainTextResponse(redirect_url)
 
@@ -61,7 +64,7 @@ async def short_url(
 async def redirect_by_shorted_url(
     alias: str = Path(
         regex=r'[a-zA-Z0-9]{7,}',
-        min_length=7, max_length=URL_LENGTH*2,
+        min_length=config.MIN_URL_ALIAS_LEN, max_length=config.MAX_URL_ALIAS_LEN,
         example="wfZy2mH"
     )
 ):
@@ -69,10 +72,12 @@ async def redirect_by_shorted_url(
     try:
         expanded_url: str = expander.expand(alias)
     except URLNotShortenedException:
+        logger.warning(f"URL with alias '{alias}' not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    logger.info(f"Expanded url {expanded_url} from alias '{alias}'")
     return RedirectResponse(expanded_url, status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='127.0.0.1', port=8000)
+    uvicorn.run(app, host=config.API_HOST, port=config.API_PORT)

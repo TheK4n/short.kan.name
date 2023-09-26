@@ -2,3 +2,4 @@ fastapi ~= 0.94.1
 redis ~= 4.5.1
 uvicorn ~= 0.21.0
 mypy ~= 1.1.1
+environs ~= 9.5.0
