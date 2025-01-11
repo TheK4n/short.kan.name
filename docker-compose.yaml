@@ -1,5 +1,3 @@
-version: "3.2"
-
 networks:
     short-network:
 
@@ -13,9 +11,11 @@ services:
         - short-network
     environment:
       REDIS_HOST: 'short-redis'
+    restart: always
 
   redis:
     image: redis
     container_name: 'short-redis'
     networks:
         - short-network
+    restart: always
