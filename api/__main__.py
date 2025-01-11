@@ -1,4 +1,6 @@
 import logging
+
+from db import DB
 import config
 from service import Cacher, Expander
 from exceptions import URLNotShortenedException
@@ -13,6 +15,7 @@ from fastapi.responses import PlainTextResponse, RedirectResponse
 
 app = FastAPI()
 logger = logging.getLogger("api_logger")
+db = DB(config.REDIS_HOST, config.REDIS_PORT)
 
 
 @app.post("/")
@@ -39,7 +42,7 @@ async def short_url(
             description="Desired alias, if already taken or invalid - generates new"
         )
 ):
-    cacher = Cacher(ttl, config.MIN_URL_ALIAS_LEN)
+    cacher = Cacher(ttl, config.MIN_URL_ALIAS_LEN, db)
 
     is_alias_not_provided_or_is_taken = (alias is None) or cacher.is_cached(alias)
 
@@ -59,6 +62,10 @@ async def short_url(
 
     return PlainTextResponse(redirect_url)
 
+@app.get("/ping")
+async def ping():
+    return PlainTextResponse(content="pong", status_code=status.HTTP_200_OK)
+
 
 @app.get("/{alias}")
 async def redirect_by_shorted_url(
@@ -68,7 +75,7 @@ async def redirect_by_shorted_url(
         example="wfZy2mH"
     )
 ):
-    expander = Expander()
+    expander = Expander(db)
     try:
         expanded_url: str = expander.expand(alias)
     except URLNotShortenedException:

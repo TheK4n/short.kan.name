@@ -1,0 +1,21 @@
+version: "3.2"
+
+networks:
+    short-network:
+
+services:
+  short:
+    build: .
+    container_name: 'short'
+    ports:
+      - 8080:80
+    networks:
+        - short-network
+    environment:
+      REDIS_HOST: 'short-redis'
+
+  redis:
+    image: redis
+    container_name: 'short-redis'
+    networks:
+        - short-network

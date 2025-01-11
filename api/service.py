@@ -8,13 +8,10 @@ __all__ = ["Cacher", "Expander"]
 
 
 class Cacher:
-    def __init__(self, ttl: int, length: int):
+    def __init__(self, ttl: int, length: int, db: DB):
         self.__ttl = ttl
         self.__length = length
-        self.__connect_database()
-
-    def __connect_database(self):
-        self.__db = DB()
+        self.__db = db
 
     def cache_url(self, url: str, alias: str):
         self.__db.set(alias, url, self.__ttl)
@@ -37,11 +34,8 @@ class Cacher:
 
 
 class Expander:
-    def __init__(self):
-        self.__connect_database()
-
-    def __connect_database(self):
-        self.__db = DB()
+    def __init__(self, db: DB):
+        self.__db = db
 
     def expand(self, alias: str) -> str:
         try:

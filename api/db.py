@@ -1,4 +1,3 @@
-
 import redis
 
 
@@ -10,8 +9,7 @@ class KeyNotExistsError(Exception):
 
 
 class DB:
-    
-    def __init__(self, host: str = "127.0.0.1", port: int = 6379):
+    def __init__(self, host: str, port: int):
         pool = redis.ConnectionPool(host=host, port=port, db=0)
         self.connection = redis.Redis(connection_pool=pool)
 

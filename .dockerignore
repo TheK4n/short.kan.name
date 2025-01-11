@@ -1,0 +1,17 @@
+.env
+
+db.sqlite3
+Dockerfile
+README.md
+env.sample
+
+requirements
+!requirements/prod.txt
+
+*/static/
+run
+venv/
+data/
+.gitignore
+.git
+.dockerignore

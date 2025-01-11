@@ -2,7 +2,6 @@ import requests
 
 
 class APIWrapper:
-
     def __init__(self, host: str):
         self.host = host
 
@@ -25,4 +24,3 @@ class APIWrapper:
 
     def expand_url(self, url_alias: str) -> requests.Response:
         return self._make_get_request(url_alias)
-
