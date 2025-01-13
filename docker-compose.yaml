@@ -1,14 +1,15 @@
 networks:
-    short-network:
+  short-network:
 
 services:
   short:
+    image: thek4n/short
     build: .
     container_name: 'short'
     ports:
       - 8080:80
     networks:
-        - short-network
+      - short-network
     environment:
       REDIS_HOST: 'short-redis'
     restart: always
