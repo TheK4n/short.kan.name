@@ -27,7 +27,8 @@ async def short_url(
         ),
         ttl: int = Query(
             default=config.MIN_URL_TTL_SECONDS,
-            gt=0, lt=config.MAX_URL_TTL_SECONDS,
+            gt=config.MIN_URL_TTL_SECONDS,
+            lt=config.MAX_URL_TTL_SECONDS,
             description="Time to live"
         ),
         one_time: bool = Query(
@@ -71,7 +72,8 @@ async def ping():
 async def redirect_by_shorted_url(
     alias: str = Path(
         regex=r'[a-zA-Z0-9]{7,}',
-        min_length=config.MIN_URL_ALIAS_LEN, max_length=config.MAX_URL_ALIAS_LEN,
+        min_length=config.MIN_URL_ALIAS_LEN,
+        max_length=config.MAX_URL_ALIAS_LEN,
         example="wfZy2mH"
     )
 ):

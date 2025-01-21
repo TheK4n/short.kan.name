@@ -15,7 +15,7 @@ API_PORT = env.int("API_PORT", default=8080)
 REDIS_HOST = env.str("REDIS_HOST", default="127.0.0.1")
 REDIS_PORT = env.int("REDIS_PORT", default=6379)
 
-MIN_URL_TTL_SECONDS = env.int("MIN_URL_TTL_SECONDS", default=60 * 60 * 24)
+MIN_URL_TTL_SECONDS = env.int("MIN_URL_TTL_SECONDS", default=60)
 MAX_URL_TTL_SECONDS = env.int("MAX_URL_TTL_SECONDS", default=60 * 60 * 24 * 3)
 MIN_URL_ALIAS_LEN = env.int("MIN_URL_ALIAS_LEN", default=7)
 MAX_URL_ALIAS_LEN = env.int("MAX_URL_ALIAS_LEN", default=7*2)
