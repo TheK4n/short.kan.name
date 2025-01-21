@@ -82,7 +82,7 @@ async def redirect_by_shorted_url(
         logger.warning(f"URL with alias '{alias}' not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     logger.info(f"Expanded url {expanded_url} from alias '{alias}'")
-    return RedirectResponse(expanded_url, status_code=status.HTTP_301_MOVED_PERMANENTLY)
+    return RedirectResponse(expanded_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
 
 if __name__ == '__main__':
