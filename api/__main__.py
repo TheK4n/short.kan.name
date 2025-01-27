@@ -7,8 +7,8 @@ from exceptions import URLNotShortenedException
 
 from fastapi import (
     FastAPI,
-    HTTPException, Path, Request, Body, Query,
-    status
+    HTTPException, Path, Request, Body,
+    status,
 )
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
@@ -25,17 +25,17 @@ async def short_url(
             example="https://google.com",
             max_length=2000
         ),
-        ttl: int = Query(
+        ttl: int = Body(
             default=config.MIN_URL_TTL_SECONDS,
             gt=config.MIN_URL_TTL_SECONDS,
             lt=config.MAX_URL_TTL_SECONDS,
             description="Time to live"
         ),
-        one_time: bool = Query(
+        one_time: bool = Body(
             default=False,
             description="If true, after following a url, url becomes invalid"
         ),
-        alias: str | None = Query(
+        alias: str | None = Body(
             default=None,
             min_length=config.MIN_URL_ALIAS_LEN, max_length=config.MAX_URL_ALIAS_LEN,
             regex=r'[a-zA-Z0-9]{7,}',
