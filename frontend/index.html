@@ -4,8 +4,58 @@
 <head>
     <meta charset="utf-8">
     <title>URLShortener</title>
-    <script type="text/javascript" src="/data.js"></script>
+    <!--<script type="text/javascript" src="/data.js"></script>-->
     <link rel="stylesheet" type="text/css" href="/style.css"></link>
+
+    <script>
+
+
+
+function submitForm(event) {
+    // Отменяем стандартное поведение браузера с отправкой формы
+    event.preventDefault();
+
+    // event.target — это HTML-элемент form
+    let formData = new FormData(event.target);
+
+    // Собираем данные формы в объект
+    let obj = {};
+    formData.forEach((value, key) => obj[key] = value);
+
+    // Собираем запрос к серверу
+    let request = new Request(event.target.action, {
+        method: 'POST',
+        body: JSON.stringify(obj),
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+
+    // Отправляем (асинхронно!)
+    fetch(request).then(
+        function(response) {
+            // Запрос успешно выполнен
+            console.log(response);
+            // return response.json() и так далее см. документацию
+        },
+        function(error) {
+            // Запрос не получилось отправить
+            console.error(error);
+        }
+    );
+
+    // Код после fetch выполнится ПЕРЕД получением ответа
+    // на запрос, потому что запрос выполняется асинхронно,
+    // отдельно от основного кода
+    console.log('Запрос отправляется');
+}
+
+
+window.onload = (event) => {
+    document.getElementById('formaction').addEventListener('submit', submitForm);
+};
+    </script>
+
 </head>
 
 <body>
@@ -20,7 +70,7 @@
         <section id="urlbox">
             <h1>Paste the URL to be shortened</h1>
 
-            <form action="shortener.php" method="post">
+            <form id="formaction" action="http://localhost:8081/api/shorten" method="post">
                 <div id="formurl">
                     <input type="url" name="url_to_be_shortened" placeholder="Enter the link here">
 

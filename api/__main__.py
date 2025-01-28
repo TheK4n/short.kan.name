@@ -7,7 +7,7 @@ from exceptions import URLNotShortenedException
 
 from fastapi import (
     FastAPI,
-    HTTPException, Path, Request, Body,
+    HTTPException, Path, Request, Body, Query,
     status,
 )
 from fastapi.responses import PlainTextResponse, RedirectResponse
@@ -18,30 +18,12 @@ logger = logging.getLogger("api_logger")
 db = DB(config.REDIS_HOST, config.REDIS_PORT)
 
 
-@app.post("/")
-async def short_url(
-        request: Request,
-        url_to_be_shortened: str = Body(
-            example="https://google.com",
-            max_length=2000
-        ),
-        ttl: int = Body(
-            default=config.MIN_URL_TTL_SECONDS,
-            gt=config.MIN_URL_TTL_SECONDS,
-            lt=config.MAX_URL_TTL_SECONDS,
-            description="Time to live"
-        ),
-        one_time: bool = Body(
-            default=False,
-            description="If true, after following a url, url becomes invalid"
-        ),
-        alias: str | None = Body(
-            default=None,
-            min_length=config.MIN_URL_ALIAS_LEN, max_length=config.MAX_URL_ALIAS_LEN,
-            regex=r'[a-zA-Z0-9]{7,}',
-            example="wfZy2mH",
-            description="Desired alias, if already taken or invalid - generates new"
-        )
+async def _short_url(
+    request: Request,
+    url_to_be_shortened: str,
+    ttl: int,
+    one_time: bool,
+    alias: str | None
 ):
     cacher = Cacher(ttl, config.MIN_URL_ALIAS_LEN, db)
 
@@ -62,6 +44,62 @@ async def short_url(
     logger.info(f"Shortened url {url_to_be_shortened} with alias '{alias}' from '{request.client.host}'")
 
     return PlainTextResponse(redirect_url)
+
+
+@app.post("/api/shorten")
+async def short_url(
+    request: Request,
+    url_to_be_shortened: str = Body(
+        example="https://google.com",
+        max_length=2000
+    ),
+    ttl: int = Body(
+        default=config.MIN_URL_TTL_SECONDS,
+        gt=config.MIN_URL_TTL_SECONDS,
+        lt=config.MAX_URL_TTL_SECONDS,
+        description="Time to live"
+    ),
+    one_time: bool = Body(
+        default=False,
+        description="If true, after following a url, url becomes invalid"
+    ),
+    alias: str | None = Body(
+        default=None,
+        min_length=config.MIN_URL_ALIAS_LEN, max_length=config.MAX_URL_ALIAS_LEN,
+        regex=r'[a-zA-Z0-9]{7,}',
+        example="wfZy2mH",
+        description="Desired alias, if already taken or invalid - generates new"
+    )
+):
+    return await _short_url(request, url_to_be_shortened, ttl, one_time, alias)
+
+
+@app.post("/")
+async def short_url_simple(
+    request: Request,
+    url_to_be_shortened: str = Body(
+        example="https://google.com",
+        max_length=2000
+    ),
+    ttl: int = Query(
+        default=config.MIN_URL_TTL_SECONDS,
+        gt=config.MIN_URL_TTL_SECONDS,
+        lt=config.MAX_URL_TTL_SECONDS,
+        description="Time to live"
+    ),
+    one_time: bool = Query(
+        default=False,
+        description="If true, after following a url, url becomes invalid"
+    ),
+    alias: str | None = Query(
+        default=None,
+        min_length=config.MIN_URL_ALIAS_LEN, max_length=config.MAX_URL_ALIAS_LEN,
+        regex=r'[a-zA-Z0-9]{7,}',
+        example="wfZy2mH",
+        description="Desired alias, if already taken or invalid - generates new"
+    )
+):
+    return await _short_url(request, url_to_be_shortened, ttl, one_time, alias)
 
 @app.get("/ping")
 async def ping():
